@@ -30,6 +30,10 @@ import static java.lang.System.out;
 
 public class ImageAveragerNEF extends JPanel implements ActionListener, PropertyChangeListener {
 
+    private static final String _AVG = "Average";
+    private static final String _LIGHTEN ="Lighten";
+    private static final String _DARKEN = "Darken";
+    JComboBox<String> selection;
     JFileChooser chooser;
     String choosertitle;
     JButton go;
@@ -56,7 +60,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                 String result = get();
 
                 JOptionPane.showMessageDialog(null, result, "Processing is over", JOptionPane.INFORMATION_MESSAGE);
-                go.setEnabled(true);
+                setEnabledBtn(true);
                 progressMonitor.close();
                 super.done();
             } catch (Exception ex) {
@@ -83,6 +87,14 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                 int w = 0;
                 int h = 0;
                 WritableRaster wRaster = null;
+                boolean avg=false;
+                boolean litn=false;
+                if(selection.getSelectedItem().equals(_AVG)){
+                    avg=true;
+                }
+                else if(selection.getSelectedItem().equals(_LIGHTEN)){
+                    litn=true;
+                }
 
                 for (int i = 0; i < totalFiles; i++) {
                     File file = new File(fileName.get(i));
@@ -114,17 +126,48 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                             Color c=new Color(RGB);
 
 
-                            averagePixel[width][height][0] += c.getRed();
-                            averagePixel[width][height][1] +=  c.getGreen();
-                            averagePixel[width][height][2] +=  c.getBlue();
+                            if(avg) {
+                                averagePixel[width][height][0] += c.getRed();
+                                averagePixel[width][height][1] += c.getGreen();
+                                averagePixel[width][height][2] += c.getBlue();
 
-                            if (i == totalFiles - 1) // update the raster while
-                            // processing last file
-                            {
-                                averagePixel[width][height][0] /= totalFiles;
-                                averagePixel[width][height][1] /= totalFiles;
-                                averagePixel[width][height][2] /= totalFiles;
-                                wRaster.setPixel(width, height,averagePixel[width][height]);
+                                if (i == totalFiles - 1) // update the raster while
+                                // processing last file
+                                {
+                                    averagePixel[width][height][0] /= totalFiles;
+                                    averagePixel[width][height][1] /= totalFiles;
+                                    averagePixel[width][height][2] /= totalFiles;
+                                    wRaster.setPixel(width, height, averagePixel[width][height]);
+                                }
+                            }
+                            else if(litn){
+                                averagePixel[width][height][0] = Math.max(c.getRed(), averagePixel[width][height][0]);
+                                averagePixel[width][height][1] = Math.max(c.getGreen(), averagePixel[width][height][1]);
+                                averagePixel[width][height][2] = Math.max(c.getBlue(), averagePixel[width][height][2]);
+
+                                if (i == totalFiles - 1) // update the raster while
+                                // processing last file
+                                {
+                                    wRaster.setPixel(width, height, averagePixel[width][height]);
+                                }
+                            }
+                            else{
+                                if(i==0){
+                                    averagePixel[width][height][0] = c.getRed();
+                                    averagePixel[width][height][1] = c.getGreen();
+                                    averagePixel[width][height][2] = c.getBlue();
+                                }
+                                else {
+                                    averagePixel[width][height][0] = Math.min(c.getRed(), averagePixel[width][height][0]);
+                                    averagePixel[width][height][1] = Math.min(c.getGreen(), averagePixel[width][height][1]);
+                                    averagePixel[width][height][2] = Math.min(c.getBlue(), averagePixel[width][height][2]);
+                                }
+
+                                if (i == totalFiles - 1) // update the raster while
+                                // processing last file
+                                {
+                                    wRaster.setPixel(width, height, averagePixel[width][height]);
+                                }
                             }
                         }
                     }
@@ -134,14 +177,16 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                 final TagRational exposure = exifIFD.getExposureTime();*/
 
 
-                    progressMonitor.setProgress(i * 100 / totalFiles);
-                    progressMonitor.setNote("File: " + i + "/" + totalFiles + " processed!");
+                    progressMonitor.setProgress((i+1) * 100 / totalFiles);
+                    progressMonitor.setNote("File: " + (i+1) + "/" + totalFiles + " processed!");
                     if (isCancelled() || progressMonitor.isCanceled()) {
                         return _ABORTED;
                     }
                 }
-                File file = new File(directoryName + "\\Output_"
-                        + System.currentTimeMillis() + ".tiff");
+
+                String name="Output_"+selection.getSelectedItem()+"_"+ System.currentTimeMillis() + ".tiff";
+
+                File file = new File(directoryName + "\\"+name);
                 FileOutputStream fileoutput = new FileOutputStream(file);
 
 
@@ -152,7 +197,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                 BufferedImage newImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
                 newImage.setData(wRaster);
                 enc.encode(newImage);
-                ImageIO.write(newImage, "png", new File(directoryName + "\\Output_" + System.currentTimeMillis() + "png"));
+                //ImageIO.write(newImage, "png", new File(directoryName + "\\Output_" + System.currentTimeMillis() + ".png"));
 
                 fileoutput.close();
 
@@ -191,16 +236,31 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
             }
         });
 
-        frame.getContentPane().add(this, "Center");
+        final JPanel compsToExperiment = new JPanel();
+        GridLayout experimentLayout = new GridLayout(2,1);
+        compsToExperiment.setLayout(experimentLayout);
+
+
         frame.setSize(this.getPreferredSize());
         frame.setVisible(true);
+        selection=new JComboBox<String>(new String[]{_AVG, _LIGHTEN, _DARKEN});
+        compsToExperiment.add(selection);
+
         go = new JButton("Select Folder");
         go.addActionListener(this);
-        add(go);
+        compsToExperiment.add(go);
+        frame.add(compsToExperiment);
+        frame.setVisible(true);
+    }
+
+    public void setEnabledBtn(boolean val){
+        go.setEnabled(val);
+        selection.setEnabled(val);
     }
 
     public void actionPerformed(ActionEvent e) {
-        go.setEnabled(false);
+        setEnabledBtn(false);
+
 
         chooser = new JFileChooser();
         chooser.setCurrentDirectory(new File(
@@ -230,12 +290,13 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                     }
                 });
 
-                progressMonitor = new ProgressMonitor(this, "Loading values...", "", 0, 100);
+                progressMonitor = new ProgressMonitor(this, "Loading Files, please wait...", "", 0, 100);
                 progressMonitor.setMillisToDecideToPopup(1);
                 progressMonitor.setMillisToPopup(2);
 
                 for (File file : files) {
                     if (file.isFile()) {
+                        progressMonitor.setProgress(0);
                         progressMonitor.setNote("Loaded: " + file.getCanonicalPath());
                         results.add(file.getCanonicalPath());
                     }
@@ -253,12 +314,12 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
             }
 
         } else {
-            go.setEnabled(true);
+            setEnabledBtn(true);
         }
     }
 
     public Dimension getPreferredSize() {
-        return new Dimension(400, 100);
+        return new Dimension(400, 200);
     }
 
 }
