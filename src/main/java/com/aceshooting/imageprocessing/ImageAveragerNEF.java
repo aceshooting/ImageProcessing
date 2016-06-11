@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -247,8 +248,19 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
         }
     }
 
-    public static void main(String[] foo) {
-        new ImageAveragerNEF();
+    public static void main(String[] args) throws IOException, URISyntaxException {
+        String currentPath=ImageAveragerNEF.class
+                .getProtectionDomain()
+                .getCodeSource().getLocation()
+                .toURI().getPath()
+                .replace('/', File.separator.charAt(0)).substring(1);
+        if(args.length==0 && Runtime.getRuntime().maxMemory()/1024/1024<980) {
+            Runtime.getRuntime().exec("java -jar -Xmx1500m "+currentPath+" restart");
+            return;
+        }
+        else {
+            new ImageAveragerNEF();
+        }
     }
 
     // executes in event dispatch thread
