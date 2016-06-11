@@ -1,14 +1,22 @@
 package com.aceshooting.imageprocessing;
 
 
-import java.awt.Dimension;
+
+
+import com.sun.media.jai.codec.ImageCodec;
+import com.sun.media.jai.codec.ImageEncoder;
+import com.sun.media.jai.codec.TIFFEncodeParam;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReadParam;
+import javax.imageio.ImageReader;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.ColorModel;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
+import java.awt.image.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -18,18 +26,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.*;
+import static java.lang.System.out;
 
-import com.sun.media.jai.codec.FileSeekableStream;
-import com.sun.media.jai.codec.ImageCodec;
-import com.sun.media.jai.codec.ImageDecoder;
-import com.sun.media.jai.codec.ImageEncoder;
-import com.sun.media.jai.codec.SeekableStream;
-import com.sun.media.jai.codec.TIFFDecodeParam;
-import com.sun.media.jai.codec.TIFFEncodeParam;
-import com.sun.media.jai.codecimpl.TIFFImage;
-
-public class ImageAverager16Bit extends JPanel implements ActionListener, PropertyChangeListener {
+public class ImageAveragerNEF extends JPanel implements ActionListener, PropertyChangeListener {
 
     JFileChooser chooser;
     String choosertitle;
@@ -66,7 +65,7 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
         }
 
         @Override
-        protected void process(java.util.List<String> chunks) {
+        protected void process(List<String> chunks) {
             if (isCancelled()) {
                 return;
             }
@@ -79,52 +78,45 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
         @Override
         protected String doInBackground() throws Exception {
             if (fileName.size() != 0) {
-                Raster raster[] = new Raster[fileName.size()];
-                WritableRaster wRaster = null;
-                ColorModel cm = null;
                 int totalFiles = fileName.size();
+                int averagePixel[][][] = null;
+                int w = 0;
+                int h = 0;
+                WritableRaster wRaster = null;
 
                 for (int i = 0; i < totalFiles; i++) {
-
                     File file = new File(fileName.get(i));
+                    final ImageReader reader = ImageIO.getImageReaders(file).next();
+                    reader.setInput(ImageIO.createImageInputStream(file));
+                    BufferedImage tempRast=reader.read(0);
 
-                    SeekableStream s = new FileSeekableStream(file);
 
-                    TIFFDecodeParam param = null;
-
-                    ImageDecoder dec = ImageCodec.createImageDecoder("tiff", s, param);
-
-                    raster[i] = dec.decodeAsRaster();
-
-                    TIFFImage image = (TIFFImage) dec.decodeAsRenderedImage();
-
-                    if (wRaster == null) { // Create a writable raster and get the color
-                        // model
-                        // We'll use this to write the image
-                        cm = image.getColorModel();
-                        wRaster = image.getData().createCompatibleWritableRaster();
-
+                    if (averagePixel == null) {
+                        w = tempRast.getWidth();
+                        h = tempRast.getHeight();
+                        averagePixel = new int[w][h][3];
+                        wRaster=Raster.createBandedRaster(DataBuffer.TYPE_INT,w,h,3,new Point(0,0));
+                    } else {
+                        if (tempRast.getWidth() != w || tempRast.getHeight() != h) {
+                            JOptionPane.showMessageDialog(null, "All files must be the same size", "Processing is aborted", JOptionPane.ERROR_MESSAGE);
+                            this.done();
+                            return _ABORTED;
+                        }
                     }
-                    s.close();
-
-
-                }
-                int w = raster[0].getWidth(), h = raster[0].getHeight();
-                int averagePixel[][][] = new int[w][h][3];
-                for (int i = 0; i < totalFiles; i++) {
                     for (int width = 0; width < w; width++) {
-                        if (isCancelled()||progressMonitor.isCanceled()) {
+                        if (isCancelled() || progressMonitor.isCanceled()) {
                             this.done();
                             return _ABORTED;
                         }
                         for (int height = 0; height < h; height++) {
-                            int[] pixelA = null;
 
-                            pixelA = raster[i].getPixel(width, height, pixelA);
+                            int RGB=tempRast.getRGB(width,height);
+                            Color c=new Color(RGB);
 
-                            averagePixel[width][height][0] += pixelA[0];
-                            averagePixel[width][height][1] += pixelA[1];
-                            averagePixel[width][height][2] += pixelA[2];
+
+                            averagePixel[width][height][0] += c.getRed();
+                            averagePixel[width][height][1] +=  c.getGreen();
+                            averagePixel[width][height][2] +=  c.getBlue();
 
                             if (i == totalFiles - 1) // update the raster while
                             // processing last file
@@ -132,21 +124,22 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
                                 averagePixel[width][height][0] /= totalFiles;
                                 averagePixel[width][height][1] /= totalFiles;
                                 averagePixel[width][height][2] /= totalFiles;
-                                wRaster.setPixel(width, height,
-                                        averagePixel[width][height]);
+                                wRaster.setPixel(width, height,averagePixel[width][height]);
                             }
                         }
-                        if (isCancelled()||progressMonitor.isCanceled()) {
-                            return _ABORTED;
-                        }
                     }
+             /*   final IIOMetadata metadata = reader.getImageMetadata(0);
+                final NEFMetadata nefMetadata = (NEFMetadata) metadata;
+                final IFD exifIFD = nefMetadata.getExifIFD();
+                final TagRational exposure = exifIFD.getExposureTime();*/
+
+
                     progressMonitor.setProgress(i * 100 / totalFiles);
                     progressMonitor.setNote("File: " + i + "/" + totalFiles + " processed!");
-                    if (isCancelled()||progressMonitor.isCanceled()) {
+                    if (isCancelled() || progressMonitor.isCanceled()) {
                         return _ABORTED;
                     }
                 }
-
                 File file = new File(directoryName + "\\Output_"
                         + System.currentTimeMillis() + ".tiff");
                 FileOutputStream fileoutput = new FileOutputStream(file);
@@ -154,9 +147,12 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
 
                 TIFFEncodeParam encParam = null;
 
-                ImageEncoder enc = ImageCodec.createImageEncoder("tiff", fileoutput,
-                        encParam);
-                enc.encode(wRaster, cm);
+                ImageEncoder enc = ImageCodec.createImageEncoder("tiff", fileoutput,encParam);
+
+                BufferedImage newImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+                newImage.setData(wRaster);
+                enc.encode(newImage);
+                ImageIO.write(newImage, "png", new File(directoryName + "\\Output_" + System.currentTimeMillis() + "png"));
 
                 fileoutput.close();
 
@@ -164,12 +160,11 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
             } else {
                 return _NOFILE;
             }
-
         }
     }
 
     public static void main(String[] foo) {
-        new ImageAverager16Bit();
+        new ImageAveragerNEF();
     }
 
     // executes in event dispatch thread
@@ -187,9 +182,9 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
         }
     }
 
-    public ImageAverager16Bit() {
+    public ImageAveragerNEF() {
 
-        frame = new JFrame("TIFF Image Averaging - By Ace Shooting");
+        frame = new JFrame("Raw Image Processing - By Ace Shooting");
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 System.exit(0);
@@ -227,8 +222,8 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
                 directoryName = chooser.getSelectedFile().getCanonicalPath();
                 files = new File(directoryName).listFiles(new FilenameFilter() {
                     public boolean accept(File dir, String name) {
-                        if (name.toLowerCase().endsWith("tif")
-                                || name.toLowerCase().endsWith("tiff"))
+                        if (name.toLowerCase().endsWith("nef")
+                                || name.toLowerCase().endsWith("cr2") || name.toLowerCase().endsWith("jpg") || name.toLowerCase().endsWith("tif") || name.toLowerCase().endsWith("tiff"))
                             return true;
                         else
                             return false;
@@ -241,11 +236,10 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
 
                 for (File file : files) {
                     if (file.isFile()) {
-                        progressMonitor.setNote("Loaded: "+file.getCanonicalPath());
+                        progressMonitor.setNote("Loaded: " + file.getCanonicalPath());
                         results.add(file.getCanonicalPath());
                     }
                 }
-
 
 
                 operation = new Calculate(results, directoryName);

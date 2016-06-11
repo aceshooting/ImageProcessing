@@ -73,6 +73,12 @@
             <version>1.1.3</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.rawdarkroom</groupId>
+            <artifactId>it.tidalwave.imageio.raw</artifactId>
+            <version>1.7-ALPHA-2</version>
+        </dependency>
+
     </dependencies>
 
     <repositories>
