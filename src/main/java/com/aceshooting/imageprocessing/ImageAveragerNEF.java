@@ -1,8 +1,6 @@
 package com.aceshooting.imageprocessing;
 
 
-
-
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageEncoder;
 import com.sun.media.jai.codec.TIFFEncodeParam;
@@ -31,7 +29,7 @@ import static java.lang.System.out;
 public class ImageAveragerNEF extends JPanel implements ActionListener, PropertyChangeListener {
 
     private static final String _AVG = "Average";
-    private static final String _LIGHTEN ="Lighten";
+    private static final String _LIGHTEN = "Lighten";
     private static final String _DARKEN = "Darken";
     JComboBox<String> selection;
     JFileChooser chooser;
@@ -79,6 +77,29 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
             }
         }
 
+        private String convertTime(double timeinMs){
+            if(timeinMs<1000){
+                return (int)(timeinMs)+" ms";
+            }
+            else{
+                timeinMs=(int)(timeinMs/1000);
+                if(timeinMs<60){
+                    return (int)(timeinMs)+" s";
+                }
+                else{
+                    double sec=timeinMs-((int)(timeinMs/60))*60;
+                    timeinMs=(int)(timeinMs/60);
+                    if(timeinMs<60){
+                        return (int)(timeinMs)+" min "+(int)(sec)+" sec";
+                    }
+                    else{
+                        double min=timeinMs-((int)(timeinMs/60))*60;
+                        timeinMs=(int)(timeinMs/60);
+                        return (int)(timeinMs)+" h "+(int)(min)+" min "+(int)(sec) +" sec";
+                    }
+                }
+            }
+        }
         @Override
         protected String doInBackground() throws Exception {
             if (fileName.size() != 0) {
@@ -87,27 +108,27 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                 int w = 0;
                 int h = 0;
                 WritableRaster wRaster = null;
-                boolean avg=false;
-                boolean litn=false;
-                if(selection.getSelectedItem().equals(_AVG)){
-                    avg=true;
-                }
-                else if(selection.getSelectedItem().equals(_LIGHTEN)){
-                    litn=true;
+                boolean avg = false;
+                boolean litn = false;
+                if (selection.getSelectedItem().equals(_AVG)) {
+                    avg = true;
+                } else if (selection.getSelectedItem().equals(_LIGHTEN)) {
+                    litn = true;
                 }
 
+                long startTime=System.currentTimeMillis();
                 for (int i = 0; i < totalFiles; i++) {
                     File file = new File(fileName.get(i));
                     final ImageReader reader = ImageIO.getImageReaders(file).next();
                     reader.setInput(ImageIO.createImageInputStream(file));
-                    BufferedImage tempRast=reader.read(0);
+                    BufferedImage tempRast = reader.read(0);
 
 
                     if (averagePixel == null) {
                         w = tempRast.getWidth();
                         h = tempRast.getHeight();
                         averagePixel = new int[w][h][3];
-                        wRaster=Raster.createBandedRaster(DataBuffer.TYPE_INT,w,h,3,new Point(0,0));
+                        wRaster = Raster.createBandedRaster(DataBuffer.TYPE_INT, w, h, 3, new Point(0, 0));
                     } else {
                         if (tempRast.getWidth() != w || tempRast.getHeight() != h) {
                             JOptionPane.showMessageDialog(null, "All files must be the same size", "Processing is aborted", JOptionPane.ERROR_MESSAGE);
@@ -115,18 +136,16 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                             return _ABORTED;
                         }
                     }
-                    for (int width = 0; width < w; width++) {
-                        if (isCancelled() || progressMonitor.isCanceled()) {
-                            this.done();
-                            return _ABORTED;
-                        }
-                        for (int height = 0; height < h; height++) {
+                    if (avg) {
+                        for (int width = 0; width < w; width++) {
+                            if (isCancelled() || progressMonitor.isCanceled()) {
+                                this.done();
+                                return _ABORTED;
+                            }
+                            for (int height = 0; height < h; height++) {
 
-                            int RGB=tempRast.getRGB(width,height);
-                            Color c=new Color(RGB);
-
-
-                            if(avg) {
+                                int RGB = tempRast.getRGB(width, height);
+                                Color c = new Color(RGB);
                                 averagePixel[width][height][0] += c.getRed();
                                 averagePixel[width][height][1] += c.getGreen();
                                 averagePixel[width][height][2] += c.getBlue();
@@ -140,7 +159,16 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                                     wRaster.setPixel(width, height, averagePixel[width][height]);
                                 }
                             }
-                            else if(litn){
+                        }
+                    } else if (litn) {
+                        for (int width = 0; width < w; width++) {
+                            if (isCancelled() || progressMonitor.isCanceled()) {
+                                this.done();
+                                return _ABORTED;
+                            }
+                            for (int height = 0; height < h; height++) {
+                                int RGB = tempRast.getRGB(width, height);
+                                Color c = new Color(RGB);
                                 averagePixel[width][height][0] = Math.max(c.getRed(), averagePixel[width][height][0]);
                                 averagePixel[width][height][1] = Math.max(c.getGreen(), averagePixel[width][height][1]);
                                 averagePixel[width][height][2] = Math.max(c.getBlue(), averagePixel[width][height][2]);
@@ -151,18 +179,25 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                                     wRaster.setPixel(width, height, averagePixel[width][height]);
                                 }
                             }
-                            else{
-                                if(i==0){
+                        }
+                    } else {
+                        for (int width = 0; width < w; width++) {
+                            if (isCancelled() || progressMonitor.isCanceled()) {
+                                this.done();
+                                return _ABORTED;
+                            }
+                            for (int height = 0; height < h; height++) {
+                                int RGB = tempRast.getRGB(width, height);
+                                Color c = new Color(RGB);
+                                if (i == 0) {
                                     averagePixel[width][height][0] = c.getRed();
                                     averagePixel[width][height][1] = c.getGreen();
                                     averagePixel[width][height][2] = c.getBlue();
-                                }
-                                else {
+                                } else {
                                     averagePixel[width][height][0] = Math.min(c.getRed(), averagePixel[width][height][0]);
                                     averagePixel[width][height][1] = Math.min(c.getGreen(), averagePixel[width][height][1]);
                                     averagePixel[width][height][2] = Math.min(c.getBlue(), averagePixel[width][height][2]);
                                 }
-
                                 if (i == totalFiles - 1) // update the raster while
                                 // processing last file
                                 {
@@ -176,23 +211,25 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                 final IFD exifIFD = nefMetadata.getExifIFD();
                 final TagRational exposure = exifIFD.getExposureTime();*/
 
-
-                    progressMonitor.setProgress((i+1) * 100 / totalFiles);
-                    progressMonitor.setNote("File: " + (i+1) + "/" + totalFiles + " processed!");
+                    long endTime=System.currentTimeMillis()-startTime;
+                    double elapsed=endTime;
+                    double remaining=(totalFiles-i)*elapsed/(i+1);
+                    progressMonitor.setProgress((i + 1) * 100 / totalFiles);
+                    progressMonitor.setNote("File: " + (i + 1) + "/" + totalFiles + " processed. Elapsed: "+convertTime(elapsed)+", remaining: "+convertTime(remaining));
                     if (isCancelled() || progressMonitor.isCanceled()) {
                         return _ABORTED;
                     }
                 }
 
-                String name="Output_"+selection.getSelectedItem()+"_"+ System.currentTimeMillis() + ".tiff";
+                String name = "Output_" + selection.getSelectedItem() + "_" + System.currentTimeMillis() + ".tiff";
 
-                File file = new File(directoryName + "\\"+name);
+                File file = new File(directoryName + "\\" + name);
                 FileOutputStream fileoutput = new FileOutputStream(file);
 
 
                 TIFFEncodeParam encParam = null;
 
-                ImageEncoder enc = ImageCodec.createImageEncoder("tiff", fileoutput,encParam);
+                ImageEncoder enc = ImageCodec.createImageEncoder("tiff", fileoutput, encParam);
 
                 BufferedImage newImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
                 newImage.setData(wRaster);
@@ -202,7 +239,9 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                 fileoutput.close();
 
                 return _COMPLETED;
-            } else {
+            } else
+
+            {
                 return _NOFILE;
             }
         }
@@ -237,13 +276,13 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
         });
 
         final JPanel compsToExperiment = new JPanel();
-        GridLayout experimentLayout = new GridLayout(2,1);
+        GridLayout experimentLayout = new GridLayout(2, 1);
         compsToExperiment.setLayout(experimentLayout);
 
 
         frame.setSize(this.getPreferredSize());
         frame.setVisible(true);
-        selection=new JComboBox<String>(new String[]{_AVG, _LIGHTEN, _DARKEN});
+        selection = new JComboBox<String>(new String[]{_AVG, _LIGHTEN, _DARKEN});
         compsToExperiment.add(selection);
 
         go = new JButton("Select Folder");
@@ -253,7 +292,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
         frame.setVisible(true);
     }
 
-    public void setEnabledBtn(boolean val){
+    public void setEnabledBtn(boolean val) {
         go.setEnabled(val);
         selection.setEnabled(val);
     }
