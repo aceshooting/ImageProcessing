@@ -235,15 +235,18 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
                     }
                 });
 
+                progressMonitor = new ProgressMonitor(this, "Loading values...", "", 0, 100);
+                progressMonitor.setMillisToDecideToPopup(1);
+                progressMonitor.setMillisToPopup(2);
+
                 for (File file : files) {
                     if (file.isFile()) {
-                        System.out.println(file.getCanonicalPath());
+                        progressMonitor.setNote("Loaded: "+file.getCanonicalPath());
                         results.add(file.getCanonicalPath());
                     }
                 }
 
-                progressMonitor = new ProgressMonitor(this, "Loading values...", "", 0, 100);
-                progressMonitor.setMillisToDecideToPopup(10);
+
 
                 operation = new Calculate(results, directoryName);
                 operation.addPropertyChangeListener(this);
@@ -256,14 +259,12 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
             }
 
         } else {
-            System.out
-                    .println("No Selection.Please Select the Folder containing TIFF Images.");
             go.setEnabled(true);
         }
     }
 
     public Dimension getPreferredSize() {
-        return new Dimension(200, 200);
+        return new Dimension(400, 100);
     }
 
 }
