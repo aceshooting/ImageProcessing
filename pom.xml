@@ -7,19 +7,35 @@
     <groupId>com.aceshooting</groupId>
     <artifactId>ImageProcessing</artifactId>
     <version>1.0-SNAPSHOT</version>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
-                </configuration>
+                <artifactId>maven-install-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>install-external</id>
+                        <phase>clean</phase>
+                        <configuration>
+                            <file>${basedir}/lib/jai-codec-1.1.3.jar</file>
+                            <repositoryLayout>default</repositoryLayout>
+                            <groupId>com.sun.media</groupId>
+                            <artifactId>jai-codec</artifactId>
+                            <version>1.1.3</version>
+                            <packaging>jar</packaging>
+                            <generatePom>true</generatePom>
+                        </configuration>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <archive>
                         <manifest>
@@ -27,15 +43,19 @@
                             <mainClass>com.aceshooting.imageprocessing.ImageAverager16Bit</mainClass>
                         </manifest>
                     </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -51,8 +71,6 @@
             <groupId>com.sun.media</groupId>
             <artifactId>jai-codec</artifactId>
             <version>1.1.3</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/jai-codec-1.1.3.jar</systemPath>
         </dependency>
 
     </dependencies>

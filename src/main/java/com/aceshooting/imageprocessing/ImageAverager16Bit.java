@@ -91,14 +91,14 @@ public class ImageAverager16Bit extends JPanel implements ActionListener {
                     averagePixel[width][height][0] += pixelA[0];
                     averagePixel[width][height][1] += pixelA[1];
                     averagePixel[width][height][2] += pixelA[2];
-                    if (width == 0 && height == 0) {
+                 /*   if (width == 0 && height == 0) {
                         System.out.println(i + ":" + pixelA[0] + ":"
                                 + pixelA[1] + ":" + pixelA[1]);
                         System.out.println(i + ":"
                                 + averagePixel[width][height][0] + ":"
                                 + averagePixel[width][height][1] + ":"
                                 + averagePixel[width][height][2]);
-                    }
+                    }*/
 
                     if (i == totalFiles - 1) // update the raster while
                     // processing last file
@@ -111,6 +111,7 @@ public class ImageAverager16Bit extends JPanel implements ActionListener {
                     }
                 }
             }
+            System.out.println("File: "+i+"/"+totalFiles+" processed!");
         }
 
         File file = new File(directoryName + "\\Output_"
@@ -126,6 +127,7 @@ public class ImageAverager16Bit extends JPanel implements ActionListener {
         fileoutput.close();
 
         System.out.println(message);
+        System.out.println("Done!");
     }
 
     public ImageAverager16Bit() {
@@ -145,7 +147,6 @@ public class ImageAverager16Bit extends JPanel implements ActionListener {
         add(go);
     }
 
-    @Override
     public void actionPerformed(ActionEvent e) {
         go.setEnabled(false);
 
@@ -168,8 +169,6 @@ public class ImageAverager16Bit extends JPanel implements ActionListener {
             try {
                 directoryName = chooser.getSelectedFile().getCanonicalPath();
                 files = new File(directoryName).listFiles(new FilenameFilter() {
-
-                    @Override
                     public boolean accept(File dir, String name) {
                         if (name.toLowerCase().endsWith("tif")
                                 || name.toLowerCase().endsWith("tiff"))
