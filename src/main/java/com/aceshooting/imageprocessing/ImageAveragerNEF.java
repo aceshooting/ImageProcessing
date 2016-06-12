@@ -148,6 +148,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                     if(avg && litn){
                         for (int width = 0; width < w; width++) {
                             if (isCancelled() || progressMonitor.isCanceled()) {
+                                save(w,h,wRaster);
                                 this.done();
                                 return _ABORTED;
                             }
@@ -186,6 +187,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                     else if (avg) {
                         for (int width = 0; width < w; width++) {
                             if (isCancelled() || progressMonitor.isCanceled()) {
+                                save(w,h,wRaster);
                                 this.done();
                                 return _ABORTED;
                             }
@@ -210,6 +212,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                     } else if (litn) {
                         for (int width = 0; width < w; width++) {
                             if (isCancelled() || progressMonitor.isCanceled()) {
+                                save(w,h,wRaster);
                                 this.done();
                                 return _ABORTED;
                             }
@@ -233,6 +236,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                                 this.done();
                                 return _ABORTED;
                             }
+                            averagePixel = new int[w][h][3];
                             for (int height = 0; height < h; height++) {
                                 int RGB = tempRast.getRGB(width, height);
                                 Color c = new Color(RGB);
@@ -264,10 +268,23 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                     progressMonitor.setProgress((i + 1) * 100 / totalFiles);
                     progressMonitor.setNote("File: " + (i + 1) + "/" + totalFiles + " processed. Elapsed: "+convertTime(elapsed)+", remaining: "+convertTime(remaining));
                     if (isCancelled() || progressMonitor.isCanceled()) {
+                        save(w,h,wRaster);
                         return _ABORTED;
                     }
                 }
 
+                save(w,h,wRaster);
+                return _COMPLETED;
+            } else
+
+            {
+                return _NOFILE;
+            }
+        }
+
+
+        private void save(int w, int h, WritableRaster wRaster){
+            try {
                 String name = "Output_" + selection.getSelectedItem() + "_" + System.currentTimeMillis() + ".tiff";
 
                 File file = new File(directoryName + "\\" + name);
@@ -284,15 +301,14 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                 //ImageIO.write(newImage, "png", new File(directoryName + "\\Output_" + System.currentTimeMillis() + ".png"));
 
                 fileoutput.close();
-
-                return _COMPLETED;
-            } else
-
-            {
-                return _NOFILE;
+            }
+            catch (Exception ex){
+                ex.printStackTrace();
             }
         }
     }
+
+
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         String currentPath=ImageAveragerNEF.class
