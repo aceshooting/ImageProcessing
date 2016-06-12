@@ -148,7 +148,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                     if(avg && litn){
                         for (int width = 0; width < w; width++) {
                             if (isCancelled() || progressMonitor.isCanceled()) {
-                                save(w,h,wRaster);
+                                //save(w,h,wRaster);
                                 this.done();
                                 return _ABORTED;
                             }
@@ -187,7 +187,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                     else if (avg) {
                         for (int width = 0; width < w; width++) {
                             if (isCancelled() || progressMonitor.isCanceled()) {
-                                save(w,h,wRaster);
+                                //save(w,h,wRaster);
                                 this.done();
                                 return _ABORTED;
                             }
@@ -212,7 +212,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                     } else if (litn) {
                         for (int width = 0; width < w; width++) {
                             if (isCancelled() || progressMonitor.isCanceled()) {
-                                save(w,h,wRaster);
+                                //save(w,h,wRaster);
                                 this.done();
                                 return _ABORTED;
                             }
@@ -298,7 +298,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                 BufferedImage newImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
                 newImage.setData(wRaster);
                 enc.encode(newImage);
-                //ImageIO.write(newImage, "png", new File(directoryName + "\\Output_" + System.currentTimeMillis() + ".png"));
+                ImageIO.write(newImage, "png", new File(directoryName + "\\Output_"  + selection.getSelectedItem() + "_"+ System.currentTimeMillis() + ".png"));
 
                 fileoutput.close();
             }
@@ -404,8 +404,9 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                 });
 
                 progressMonitor = new ProgressMonitor(this, "Loading Files, please wait...", "", 0, 100);
-                progressMonitor.setMillisToDecideToPopup(1);
-                progressMonitor.setMillisToPopup(2);
+                progressMonitor.setMillisToDecideToPopup(100);
+                progressMonitor.setMillisToPopup(400);
+
 
                 for (File file : files) {
                     if (file.isFile()) {
