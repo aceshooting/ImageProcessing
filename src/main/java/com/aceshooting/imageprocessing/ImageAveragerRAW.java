@@ -6,7 +6,6 @@ import com.sun.media.jai.codec.ImageEncoder;
 import com.sun.media.jai.codec.TIFFEncodeParam;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.swing.*;
 import java.awt.*;
@@ -25,9 +24,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.System.out;
-
-public class ImageAveragerNEF extends JPanel implements ActionListener, PropertyChangeListener {
+public class ImageAveragerRAW extends JPanel implements ActionListener, PropertyChangeListener {
 
     private static final String _AVGLIGHTEN = "Average_Lighten";
     private static final String _AVG = "Average";
@@ -311,7 +308,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
 
 
     public static void main(String[] args) throws IOException, URISyntaxException {
-        String currentPath=ImageAveragerNEF.class
+        String currentPath=ImageAveragerRAW.class
                 .getProtectionDomain()
                 .getCodeSource().getLocation()
                 .toURI().getPath()
@@ -321,7 +318,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
             return;
         }
         else {
-            new ImageAveragerNEF();
+            new ImageAveragerRAW();
         }
     }
 
@@ -340,7 +337,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
         }
     }
 
-    public ImageAveragerNEF() {
+    public ImageAveragerRAW() {
 
         frame = new JFrame("Raw Image Processing - By Ace Shooting");
         frame.addWindowListener(new WindowAdapter() {
