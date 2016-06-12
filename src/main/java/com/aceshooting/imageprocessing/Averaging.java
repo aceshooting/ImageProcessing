@@ -13,7 +13,7 @@ public class Averaging {
         long starttime;
         long endtime;
         double result;
-
+//test modification Houssem
         starttime= System.nanoTime();
         blendInt("D:\\ace\\gala\\aligned\\");
         //  save(bufferedImage,"","result.png");
