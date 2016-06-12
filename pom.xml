@@ -40,7 +40,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>com.aceshooting.imageprocessing.ImageAveragerNEF</mainClass>
+                            <mainClass>com.aceshooting.imageprocessing.ImageAveragerRAW</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
