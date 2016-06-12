@@ -29,6 +29,7 @@ import static java.lang.System.out;
 
 public class ImageAveragerNEF extends JPanel implements ActionListener, PropertyChangeListener {
 
+    private static final String _AVGLIGHTEN = "Average_Lighten";
     private static final String _AVG = "Average";
     private static final String _LIGHTEN = "Lighten";
     private static final String _DARKEN = "Darken";
@@ -106,14 +107,16 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
             if (fileName.size() != 0) {
                 int totalFiles = fileName.size();
                 int averagePixel[][][] = null;
+                int lightenPixel[][][] = null;
                 int w = 0;
                 int h = 0;
                 WritableRaster wRaster = null;
                 boolean avg = false;
                 boolean litn = false;
-                if (selection.getSelectedItem().equals(_AVG)) {
+                if (selection.getSelectedItem().equals(_AVG)||selection.getSelectedItem().equals(_AVGLIGHTEN)) {
                     avg = true;
-                } else if (selection.getSelectedItem().equals(_LIGHTEN)) {
+                }
+                if (selection.getSelectedItem().equals(_LIGHTEN)||selection.getSelectedItem().equals(_AVGLIGHTEN)) {
                     litn = true;
                 }
 
@@ -125,10 +128,15 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                     BufferedImage tempRast = reader.read(0);
 
 
-                    if (averagePixel == null) {
+                    if (i==0) {
                         w = tempRast.getWidth();
                         h = tempRast.getHeight();
-                        averagePixel = new int[w][h][3];
+                        if(avg) {
+                            averagePixel = new int[w][h][3];
+                        }
+                        if(litn) {
+                            lightenPixel = new int[w][h][3];
+                        }
                         wRaster = Raster.createBandedRaster(DataBuffer.TYPE_INT, w, h, 3, new Point(0, 0));
                     } else {
                         if (tempRast.getWidth() != w || tempRast.getHeight() != h) {
@@ -137,7 +145,45 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                             return _ABORTED;
                         }
                     }
-                    if (avg) {
+                    if(avg && litn){
+                        for (int width = 0; width < w; width++) {
+                            if (isCancelled() || progressMonitor.isCanceled()) {
+                                this.done();
+                                return _ABORTED;
+                            }
+                            for (int height = 0; height < h; height++) {
+
+                                int RGB = tempRast.getRGB(width, height);
+                                Color c = new Color(RGB);
+                                averagePixel[width][height][0] += c.getRed();
+                                averagePixel[width][height][1] += c.getGreen();
+                                averagePixel[width][height][2] += c.getBlue();
+
+                                lightenPixel[width][height][0] = Math.max(c.getRed(), lightenPixel[width][height][0]);
+                                lightenPixel[width][height][1] = Math.max(c.getGreen(), lightenPixel[width][height][1]);
+                                lightenPixel[width][height][2] = Math.max(c.getBlue(), lightenPixel[width][height][2]);
+
+                                if (i == totalFiles - 1) // update the raster while
+                                // processing last file
+                                {
+                                    averagePixel[width][height][0] /= totalFiles;
+                                    averagePixel[width][height][1] /= totalFiles;
+                                    averagePixel[width][height][2] /= totalFiles;
+
+                                    int diff=lightenPixel[width][height][0]+lightenPixel[width][height][1]+lightenPixel[width][height][2]-averagePixel[width][height][0]-averagePixel[width][height][1]-averagePixel[width][height][2];
+                                    diff=diff/3;
+                                    if(diff<120){
+                                        wRaster.setPixel(width, height, averagePixel[width][height]);
+                                    }
+                                    else{
+                                        wRaster.setPixel(width, height, lightenPixel[width][height]);
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                    else if (avg) {
                         for (int width = 0; width < w; width++) {
                             if (isCancelled() || progressMonitor.isCanceled()) {
                                 this.done();
@@ -170,14 +216,14 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
                             for (int height = 0; height < h; height++) {
                                 int RGB = tempRast.getRGB(width, height);
                                 Color c = new Color(RGB);
-                                averagePixel[width][height][0] = Math.max(c.getRed(), averagePixel[width][height][0]);
-                                averagePixel[width][height][1] = Math.max(c.getGreen(), averagePixel[width][height][1]);
-                                averagePixel[width][height][2] = Math.max(c.getBlue(), averagePixel[width][height][2]);
+                                lightenPixel[width][height][0] = Math.max(c.getRed(), lightenPixel[width][height][0]);
+                                lightenPixel[width][height][1] = Math.max(c.getGreen(), lightenPixel[width][height][1]);
+                                lightenPixel[width][height][2] = Math.max(c.getBlue(), lightenPixel[width][height][2]);
 
                                 if (i == totalFiles - 1) // update the raster while
                                 // processing last file
                                 {
-                                    wRaster.setPixel(width, height, averagePixel[width][height]);
+                                    wRaster.setPixel(width, height, lightenPixel[width][height]);
                                 }
                             }
                         }
@@ -294,7 +340,7 @@ public class ImageAveragerNEF extends JPanel implements ActionListener, Property
 
         frame.setSize(this.getPreferredSize());
         frame.setVisible(true);
-        selection = new JComboBox<String>(new String[]{_AVG, _LIGHTEN, _DARKEN});
+        selection = new JComboBox<String>(new String[]{_AVGLIGHTEN,_AVG, _LIGHTEN, _DARKEN});
         compsToExperiment.add(selection);
 
         go = new JButton("Select Folder");
