@@ -110,6 +110,7 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
 
                 }
                 int w = raster[0].getWidth(), h = raster[0].getHeight();
+                int totalArray[][]=new int[w][h];
                 int averagePixel[][][] = new int[w][h][3];
                 for (int i = 0; i < totalFiles; i++) {
                     for (int width = 0; width < w; width++) {
@@ -122,6 +123,10 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
 
                             pixelA = raster[i].getPixel(width, height, pixelA);
 
+                            if(pixelA[0]!=0&&pixelA[1]!=0&&pixelA[2]!=0){
+                                totalArray[width][height]++;
+                            }
+
                             averagePixel[width][height][0] += pixelA[0];
                             averagePixel[width][height][1] += pixelA[1];
                             averagePixel[width][height][2] += pixelA[2];
@@ -129,11 +134,13 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
                             if (i == totalFiles - 1) // update the raster while
                             // processing last file
                             {
-                                averagePixel[width][height][0] /= totalFiles;
-                                averagePixel[width][height][1] /= totalFiles;
-                                averagePixel[width][height][2] /= totalFiles;
-                                wRaster.setPixel(width, height,
-                                        averagePixel[width][height]);
+                                if( totalArray[width][height]!=0) {
+                                    averagePixel[width][height][0] /= totalArray[width][height];
+                                    averagePixel[width][height][1] /= totalArray[width][height];
+                                    averagePixel[width][height][2] /= totalArray[width][height];
+                                    wRaster.setPixel(width, height,
+                                            averagePixel[width][height]);
+                                }
                             }
                         }
                         if (isCancelled()||progressMonitor.isCanceled()) {
