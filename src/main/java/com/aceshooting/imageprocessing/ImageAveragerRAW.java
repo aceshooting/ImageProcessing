@@ -157,6 +157,8 @@ public class ImageAveragerRAW extends JPanel implements ActionListener, Property
                                 averagePixel[width][height][1] += c.getGreen();
                                 averagePixel[width][height][2] += c.getBlue();
 
+
+
                                 lightenPixel[width][height][0] = Math.max(c.getRed(), lightenPixel[width][height][0]);
                                 lightenPixel[width][height][1] = Math.max(c.getGreen(), lightenPixel[width][height][1]);
                                 lightenPixel[width][height][2] = Math.max(c.getBlue(), lightenPixel[width][height][2]);

@@ -79,10 +79,15 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
         @Override
         protected String doInBackground() throws Exception {
             if (fileName.size() != 0) {
-                Raster raster[] = new Raster[fileName.size()];
+                Raster raster = null;
                 WritableRaster wRaster = null;
                 ColorModel cm = null;
                 int totalFiles = fileName.size();
+
+                int w = 0;
+                int h = 0;
+                int totalArray[][] = null;
+                int averagePixel[][][] = null;
 
                 for (int i = 0; i < totalFiles; i++) {
 
@@ -94,7 +99,13 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
 
                     ImageDecoder dec = ImageCodec.createImageDecoder("tiff", s, param);
 
-                    raster[i] = dec.decodeAsRaster();
+                    raster = dec.decodeAsRaster();
+                    if (i == 0) {
+                        w = raster.getWidth();
+                        h = raster.getHeight();
+                        totalArray = new int[w][h];
+                        averagePixel = new int[w][h][3];
+                    }
 
                     TIFFImage image = (TIFFImage) dec.decodeAsRenderedImage();
 
@@ -103,27 +114,20 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
                         // We'll use this to write the image
                         cm = image.getColorModel();
                         wRaster = image.getData().createCompatibleWritableRaster();
-
                     }
                     s.close();
 
-
-                }
-                int w = raster[0].getWidth(), h = raster[0].getHeight();
-                int totalArray[][]=new int[w][h];
-                int averagePixel[][][] = new int[w][h][3];
-                for (int i = 0; i < totalFiles; i++) {
                     for (int width = 0; width < w; width++) {
-                        if (isCancelled()||progressMonitor.isCanceled()) {
+                        if (isCancelled() || progressMonitor.isCanceled()) {
                             this.done();
                             return _ABORTED;
                         }
                         for (int height = 0; height < h; height++) {
                             int[] pixelA = null;
 
-                            pixelA = raster[i].getPixel(width, height, pixelA);
+                            pixelA = raster.getPixel(width, height, pixelA);
 
-                            if(pixelA[0]!=0&&pixelA[1]!=0&&pixelA[2]!=0){
+                            if (pixelA[0] != 0 && pixelA[1] != 0 && pixelA[2] != 0) {
                                 totalArray[width][height]++;
                             }
 
@@ -134,7 +138,7 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
                             if (i == totalFiles - 1) // update the raster while
                             // processing last file
                             {
-                                if( totalArray[width][height]!=0) {
+                                if (totalArray[width][height] != 0) {
                                     averagePixel[width][height][0] /= totalArray[width][height];
                                     averagePixel[width][height][1] /= totalArray[width][height];
                                     averagePixel[width][height][2] /= totalArray[width][height];
@@ -143,16 +147,17 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
                                 }
                             }
                         }
-                        if (isCancelled()||progressMonitor.isCanceled()) {
+                        if (isCancelled() || progressMonitor.isCanceled()) {
                             return _ABORTED;
                         }
                     }
                     progressMonitor.setProgress(i * 100 / totalFiles);
                     progressMonitor.setNote("File: " + i + "/" + totalFiles + " processed!");
-                    if (isCancelled()||progressMonitor.isCanceled()) {
+                    if (isCancelled() || progressMonitor.isCanceled()) {
                         return _ABORTED;
                     }
                 }
+
 
                 File file = new File(directoryName + "\\Output_"
                         + System.currentTimeMillis() + ".tiff");
@@ -248,11 +253,10 @@ public class ImageAverager16Bit extends JPanel implements ActionListener, Proper
 
                 for (File file : files) {
                     if (file.isFile()) {
-                        progressMonitor.setNote("Loaded: "+file.getCanonicalPath());
+                        progressMonitor.setNote("Loaded: " + file.getCanonicalPath());
                         results.add(file.getCanonicalPath());
                     }
                 }
-
 
 
                 operation = new Calculate(results, directoryName);
